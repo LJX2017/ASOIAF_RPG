@@ -63,6 +63,7 @@ class Game:
                   f"what is the result of the current event based on ***ser Astarion***'s "
                   f"action{choice}? "
                   f"Only provide the result for this specific event"
+                  f"Do not explain the changes made, just output one paragraph of our version of the plot"
                   f"Your paragraph:")
         result = self.chat.send_message(prompt, keep_in_history=True)
         if self.debug:

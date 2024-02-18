@@ -41,9 +41,9 @@
             // Example: Fetch initial text from backend
             const response = await fetch('/api/initial_text');
             const data = await response.json();
-            document.getElementById('userInput').value = data.text; // Populate the text box with initial text from backend
+            // document.getElementById('cliOutput').value = data.text; // Populate the text box with initial text from backend
+            document.getElementById('cliOutput').textContent = data.text
         }
-
         document.getElementById('cliForm').addEventListener('submit', async function(event) {
             event.preventDefault();
             const userInput = document.getElementById('userInput').value;
@@ -59,7 +59,9 @@
             // Display the final text from the backend
             document.getElementById('cliOutput').textContent = resultData.finalText;
         });
-
+        document.addEventListener("DOMContentLoaded", function() {
+            fetchInitialText();
+        });
         // Call fetchInitialText to populate the text box on page load
         // fetchInitialText();
     </script>
