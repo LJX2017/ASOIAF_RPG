@@ -31,6 +31,7 @@ async def get_initial_text():
     Endpoint to fetch initial text to be displayed in the frontend input box.
     """
     # This could be fetching the initial game state or any other relevant information
+    global game
     game = Game()
     initial_text = game.initial_loop()  # Placeholder method, implement accordingly
     return {"text": initial_text}

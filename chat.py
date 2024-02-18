@@ -48,6 +48,8 @@ class Chat:
     def __init__(self, debug=False) -> None:
         self.debug = debug
         self.log_dir = "logs"
+        if not Path(self.log_dir).exists():
+            Path(self.log_dir).touch()
         self.log_file = Path(self._generate_log_file_name())
         if not self.log_file.exists():
             self.log_file.touch()
