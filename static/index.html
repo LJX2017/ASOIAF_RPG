@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
+    <title>Python CLI as Web App</title>
+</head>
+<body>
+    <nav class="container-fluid">
+        <ul>
+            <li><strong>CLI Web App</strong></li>
+        </ul>
+        <ul>
+            <li><a href="#">Home</a></li>
+            <li><a href="#" role="button">About</a></li>
+        </ul>
+    </nav>
+    <main class="container">
+        <div class="grid">
+            <section>
+                <hgroup>
+                    <h2>Python CLI Integration</h2>
+                    <h3>See your CLI program's output here:</h3>
+                </hgroup>
+                <div id="cliOutput" style="white-space: pre-wrap; background: #f0f0f0; padding: 20px; border-radius: 5px; min-height: 400px;">
+                    <!-- CLI messages will be displayed here -->
+                </div>
+                <form id="cliForm">
+                    <input type="text" id="userInput" name="userInput" placeholder="Enter your input" aria-label="User input" required>
+                    <button type="submit">Submit</button>
+                </form>
+            </section>
+        </div>
+    </main>
+    <footer class="container">
+        <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Use</a></small>
+    </footer>
+    <script>
+        async function fetchInitialText() {
+            // Example: Fetch initial text from backend
+            const response = await fetch('/api/initial_text');
+            const data = await response.json();
+            document.getElementById('userInput').value = data.text; // Populate the text box with initial text from backend
+        }
+
+        document.getElementById('cliForm').addEventListener('submit', async function(event) {
+            event.preventDefault();
+            const userInput = document.getElementById('userInput').value;
+            // Send the collected message back to the backend
+            const response = await fetch('/api/submit_input', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ userInput }),
+            });
+            const resultData = await response.json();
+            // Display the final text from the backend
+            document.getElementById('cliOutput').textContent = resultData.finalText;
+        });
+
+        // Call fetchInitialText to populate the text box on page load
+        // fetchInitialText();
+    </script>
+</body>
+</html>
