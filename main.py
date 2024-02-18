@@ -18,7 +18,7 @@ app.add_middleware(
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 # Example game instance
-game = Game()
+game = None
 
 
 class UserInput(BaseModel):
@@ -31,6 +31,7 @@ async def get_initial_text():
     Endpoint to fetch initial text to be displayed in the frontend input box.
     """
     # This could be fetching the initial game state or any other relevant information
+    game = Game()
     initial_text = game.initial_loop()  # Placeholder method, implement accordingly
     return {"text": initial_text}
 
