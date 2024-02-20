@@ -1,8 +1,10 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
 from base_game import Game
+from uuid import UUID, uuid4
+
 app = FastAPI()
 
 # Setup CORS for development ease
@@ -14,36 +16,38 @@ app.add_middleware(
     allow_headers=["*"],  # Allow all headers
 )
 
-# Serve static files, assuming your frontend HTML is placed under 'static' directory
+# Serve static files
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
-# Example game instance
-game = None
+# A dictionary to store game instances by session ID
+games = {}
 
 
 class UserInput(BaseModel):
     userInput: str
+    sessionId: UUID  # Expect a session ID with each request
 
 
 @app.get("/api/initial_text")
-async def get_initial_text():
+async def get_initial_text(session_id: UUID):
     """
-    Endpoint to fetch initial text to be displayed in the frontend input box.
+    Endpoint to fetch initial text for a given session.
     """
-    # This could be fetching the initial game state or any other relevant information
-    global game
-    game = Game()
-    initial_text = game.initial_loop()  # Placeholder method, implement accordingly
+    # if session_id not in games:
+    games[session_id] = Game(True)
+    initial_text = games[session_id].initial_loop()  # Placeholder method, implement accordingly
+    print(session_id, games[session_id].chosen_event_plot)
     return {"text": initial_text}
 
 
 @app.post("/api/submit_input")
 async def submit_input(user_input: UserInput):
     """
-    Receives user input as JSON, processes it, and returns a response.
+    Receives user input and session ID as JSON, processes it, and returns a response.
     """
-    # Process the input using your game logic
-    response_text = game.next_loop(user_input.userInput)  # Placeholder method, implement accordingly
+    session_id = user_input.sessionId
+    if session_id not in games:
+        raise HTTPException(status_code=404, detail="Session not found")
+    response_text = games[session_id].next_loop(user_input.userInput)  # Placeholder method, implement accordingly
+    print(session_id, games[session_id].chosen_event_plot)
     return {"finalText": response_text}
-
-# You may remove or adapt the existing '/api/input/' and '/api/data/' endpoints as they are not directly used by the revised frontend logic.

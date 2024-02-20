@@ -1,12 +1,12 @@
 from pathlib import Path
 from chat import Chat
+import random
 
 DATA_PATH = "improved_data_v2.txt"
 with open(DATA_PATH, 'r', encoding="utf-8") as file:
     events = file.readlines()
 TOTAL_EVENTS = len(events)
-GAP = 20
-SUMMERY_EXAMPLE = "Eddard Stark becomes Hand of the King and has a secret meeting with Catelyn to discuss Bran's attempted murder and the Lannisters. Jon Snow learns of Bran's survival and improves his fighting skills at the Night's Watch, where Tyrion Lannister offers him support before leaving. Arya and Sansa Stark's conflict leads to Eddard emphasizing family bonds. Arya begins swordsmanship lessons with Syrio Forel. Eddard receives news of Bran's recovery and investigates Jon Arryn's death, getting crucial information from Petyr Baelish. Samwell Tarly joins the Night's Watch, establishing a significant friendship with Jon."
+GAP = 10
 
 
 def generate_context(beg, end, include_id=False):
@@ -24,16 +24,20 @@ class Game:
         self.current_event_id = 0
         self.chat = Chat(debug)
         self.chosen_event_plot = ""
+        self.changes_to_plot = ""
 
     def generate_background_summery(self, beg, end):
-        prompt = (f"Referencing the the original plot:{generate_context(beg, end)}. "
-                  f"and combining the current changes to the plot of A Song of Ice and Fire "
-                  f"what will be the new plot that replaces the original plot? "
-                  f"Your don't have to include all of the events, "
-                  f"but you need to keep the new plot organized inside your paragraph. "
-                  f"And you new plot will only cover the same topics as the original plot"
-                  f"Your paragraph in 100 words:")
-        beck_ground_summery = self.chat.send_message(prompt, keep_in_history=True)
+        prompt = (f"Adapt the plot from these events:*** {generate_context(beg, end)}*** "
+                  f"to account for the actions of ***ser astarion***. "
+                  f"Omit all time information in these events."
+                  f"Consider these questions when formulating your plot:"
+                  f"1. What did astarion do in the past? unless mentioned, he does NOT alter the plot.\n"
+                  f"2. Are the people in these events directly affected by past actions of astarion?\n"
+                  # f"3. If they are directly influenced by astarion, how might they act in the events?\n"
+                  f"Summarize the plot(unchanged or adapted) in a concise paragraph.\n"
+                  f"Your 50 word paragraph:")
+
+        beck_ground_summery = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
         if self.debug:
             print(f"generating background_summery for id{beg, end}\nsummery:{beck_ground_summery}\n\n")
         return beck_ground_summery
@@ -41,52 +45,54 @@ class Game:
     def generate_new_event(self, end):
         if self.debug:
             print(f"generating new event for id{end}, which is {events[end]}\n\n")
-        prompt = (f"Further Developing on our plot,"
-                  f"Adapt this event {events[end]} "
-                  f"to logically fit our revised plot "
-                  f"elaborate on how the new version of this event will unfold "
-                  f"and tell me ***ser Astarion***'s role in the story"
-                  f"Do not tell the end of the story as that will depend on his actions "
-                  "You will present a choice for ***ser Astarion***"
-                  f"Your paragraph in 100 words:")
-        return self.chat.send_message(prompt, keep_in_history=True) + '\n\n'
+        prompt = (f"Adapting the event: \"{events[end]}\" to our revised plot. "
+                  f"Detail how this event unfolds, emphasizing ***ser Astarion***'s role but do not present the final result. "
+                  f"Do not present the outcome of this event!"
+                  f"Present possible choices for ***ser Astarion*** in this event. "
+                  f"Your 50 word paragraph elaborating on the event's unfold:")
+        # self
+        return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
 
     def generate_result(self, user_input: str):
         """
         takes in new event, asks for the user
-        :param new_event:
+        :param user_input:
         :return:
         """
         choice = user_input
-        prompt = (f"Based on our version of the plot, and the current "
-                  f"event: ***{self.chosen_event_plot}*** "
-                  f"what is the result of the current event based on ***ser Astarion***'s "
-                  f"action{choice}? "
-                  f"Only provide the result for this specific event"
-                  f"Do not explain the changes made, just output one paragraph of our version of the plot"
-                  f"Your paragraph:")
-        result = self.chat.send_message(prompt, keep_in_history=True)
+        prompt = (f"Considering ***ser Astarion***'s decision: \"{choice}\", "
+                  f"how does it influence the outcome of the event: {self.chosen_event_plot}? "
+                  f"Summarize the consequences in a paragraph, "
+                  f"focusing on the immediate impact without extrapolating the entire plot.")
+
+        result = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
+        self.summarize_player_action(choice, result)
         if self.debug:
             print(f"The changed result for this event is {result}")
         return result
 
-    # def get_user_input(self):
-    #     return input()
-    #     if self.debug:
-    #         return input()
-    #     else:
-    #         raise NotImplementedError
+    def summarize_player_action(self, choice: str, result: str):
+        prompt = (f"Event: *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
+                  f"Summarize the whole event above into a single, concise paragraph of 50 words")
+        resp = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
+        self.chat.add_to_message_history(resp, False)
+        self.chat.add_to_message_history("I will remember this", True)
 
     def pick_event_id(self, beg: int, end: int):
-        prompt = (f"Choose the most important event for the plot of A Song of I and Fire "
-                  f"from this list:{generate_context(beg, end, include_id=True)}"
-                  f" The most important event is id(only output one number):")
+        # chosen_id = random.randint((beg + end + 1) // 2, end)
+        # return chosen_id
+        prompt = (f"Choose the most important event in the plot "
+                  f"from this list:***\n{generate_context(beg, end, include_id=True)}***\n"
+                  f"Only output one numeric number representing the event's ID\n"
+                  f"Your number:")
         resp = self.chat.generate_content(prompt)
+        if self.debug:
+            print("pick_event_id\n", resp, '\n\n')
         if resp[0:2] == 'id':
             resp = resp[2:]
         return int(resp)
 
-    def part_by_part_summery(self, beg: int, end: int, gap=5):
+    def part_by_part_summery(self, beg: int, end: int, gap=GAP // 3):
         """
         Add summery to history
         """
@@ -97,57 +103,43 @@ class Game:
             else:
                 event_summery = self.generate_background_summery(beg, beg + gap)
             # self.chat.add_to_message_history("our version of plot:" + event_summery + '\n', False)
-            full_summery += event_summery + '\n\n'
+            # self.chat.add_to_message_history("I will remember this plot"'\n', True)
+            full_summery += event_summery
             if self.debug:
                 print("new version of plot summery: ", event_summery, '\n\n')
-            beg += gap
-            if beg >= end:
+            beg += gap + 1
+            if beg > end:
                 break
         return full_summery
-
-    # def main_loop(self):
-    #
-    #     while self.current_event_id < TOTAL_EVENTS:
 
     def initial_loop(self):
         end = self.current_event_id + GAP
         if end >= TOTAL_EVENTS:
             end = TOTAL_EVENTS - 1
 
-        chosen_event = self.pick_event_id(self.current_event_id, end)
-        full_summery = self.part_by_part_summery(self.current_event_id, chosen_event - 1)
-        self.chosen_event_plot = self.generate_new_event(chosen_event)
-        self.current_event_id = end + 1
+        chosen_event_id = self.pick_event_id(self.current_event_id, end)
+        full_summery = self.part_by_part_summery(self.current_event_id, chosen_event_id - 1)
+        self.chosen_event_plot = self.generate_new_event(chosen_event_id)
+        self.current_event_id = chosen_event_id + 1
         return full_summery + self.chosen_event_plot
-        # print("Current event:\n", chosen_event_plot, '\n\n')
-        # print(f"Event: {chosen_event_plot}\n Enter your choice:")  # change to API input
-        # result_of_event = self.generate_result(chosen_event_plot)
-        # print("Result:\n", result_of_event, '\n\n')
 
     def next_loop(self, user_input):
         end = self.current_event_id + GAP
         if end >= TOTAL_EVENTS:
             end = TOTAL_EVENTS - 1
+        result_of_event = self.generate_result(user_input)
+        if self.debug:
+            print("CHAT HISTORY: ", self.chat.chat_history)
 
-        result_of_event = "Result of event:\n" + self.generate_result(user_input)
-        print("Result:\n", result_of_event, '\n\n')
-
-        chosen_event = self.pick_event_id(self.current_event_id, end)
-        full_summery = self.part_by_part_summery(self.current_event_id, chosen_event - 1)
-        self.chosen_event_plot = self.generate_new_event(chosen_event)
-        print("Current event:\n", self.chosen_event_plot, '\n\n')
-        print(f"Event: {self.chosen_event_plot}\n Enter your choice:")  # change to API input
-        # self.chat.add_to_message_history(chosen_event_plot, False)
-        # self.chat.add_to_message_history(result_of_event, False)
-        # OUTPUT result, now we use cli
-        self.current_event_id = end + 1
+        chosen_event_id = self.pick_event_id(self.current_event_id, end)
+        full_summery = self.part_by_part_summery(self.current_event_id, chosen_event_id - 1)
+        self.chosen_event_plot = self.generate_new_event(chosen_event_id)
+        self.current_event_id = chosen_event_id + 1
         return result_of_event + full_summery + self.chosen_event_plot
-        # if end == TOTAL_EVENTS - 1:
-        #     break
 
 
 if __name__ == "__main__":
-    game = Game(False)
+    game = Game(True)
     print(game.initial_loop())
     while True:
         message = input()

@@ -1,9 +1,11 @@
 import dotenv
+import os
 from langchain_google_genai import (
     ChatGoogleGenerativeAI,
     HarmBlockThreshold,
     HarmCategory,
 )
+from langchain_openai import ChatOpenAI
 from langchain.memory import ChatMessageHistory
 from langchain_core.prompts import ChatPromptTemplate, MessagesPlaceholder
 from pathlib import Path
@@ -18,11 +20,13 @@ RULES = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "You are an expert in the novel A Song of Ice and Fire."
-            "We will be rewriting the plot based on the actions of ***ser astarion***"
-            "Do not make changes to the plot unless the original plot conflicts our version"
-            "***ser astarion*** will not actively engage in the story so ASSUME HE does nothing"
-            "unless there is a clear indication",
+            "1. You are an expert in the novel A Song of Ice and Fire."
+            "2. You will act as the terminal for a game that rewrites the plot"
+            " based on the actions of ser astarion(the player)"
+            "3. Do not mention you are a terminal"
+            "4. Do not mention the original plot of the novel"
+            "6. ser astarion is not involved in the plot unless I specifically say so."
+            "7. Only output pure text paragraphs",
         ),
         MessagesPlaceholder(variable_name="messages")
     ]
@@ -36,8 +40,10 @@ llm = ChatGoogleGenerativeAI(
         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
     },
-    temperature=1
+    temperature=0
 )
+# key = os.getenv('OPENAI_API_KEY')
+# print(key)
 
 
 def generate_content(user_message: str):
@@ -63,25 +69,21 @@ class Chat:
 
     def _generate_log_file_name(self):
         # Generate a unique log file name using instance id and timestamp
-        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H:%M")
+        timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H%M")
         return f"{self.log_dir}/chatbot_log_{id(self)}_{timestamp}.txt"
 
-    def log_message(self, user_message: str, ai_message: str):
+    def log_message(self, message: str):
         # Log both user and AI messages
         with self.log_file.open('a', encoding='utf-8') as log_file:
-            log_file.write(f"User: {user_message}\nAI: {ai_message}\n\n\n")
+            log_file.write(f"{message}\n")
 
     def add_to_message_history(self, message: str, is_ai_message: bool, write_to_log=True):
+        # if write_to_log:
+        self.log_message(message)
         if is_ai_message:
             self.chat_history.add_ai_message(message)
-            if write_to_log:
-                with self.log_file.open('a', encoding='utf-8') as log_file:
-                    log_file.write(f"AI: {message}\n\n\n")
         else:
             self.chat_history.add_user_message(message)
-            if write_to_log:
-                with self.log_file.open('a', encoding='utf-8') as log_file:
-                    log_file.write(f"User: {message}\n\n\n")
 
     def send_message(self, user_message: str, keep_in_history=True) -> str:
         self.chat_history.add_user_message(user_message)
