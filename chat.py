@@ -25,8 +25,7 @@ RULES = ChatPromptTemplate.from_messages(
             " based on the actions of ser astarion(the player)"
             "3. Do not mention you are a terminal"
             "4. Do not mention the original plot of the novel"
-            "6. ser astarion is not involved in the plot unless I specifically say so."
-            "7. Only output pure text paragraphs",
+            # "5. Only output pure text paragraphs",
         ),
         MessagesPlaceholder(variable_name="messages")
     ]
@@ -97,7 +96,7 @@ class Chat:
             print("ai_message: ", resp.content)
             print("\n\n\n")
         if keep_in_history:
-            self.log_message(user_message, resp.content)
+            self.log_message(user_message)
         else:
             del self.chat_history.messages[-1]
             del self.chat_history.messages[-1]
