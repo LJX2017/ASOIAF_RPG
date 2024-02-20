@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, Request
+from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
@@ -29,7 +29,7 @@ class UserInput(BaseModel):
 
 
 @app.get("/api/initial_text")
-async def get_initial_text(session_id: UUID):
+async def get_initial_text(session_id: UUID = Query(...)):
     """
     Endpoint to fetch initial text for a given session.
     """

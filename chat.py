@@ -46,6 +46,7 @@ llm = ChatGoogleGenerativeAI(
 # print(key)
 
 
+
 def generate_content(user_message: str):
     return llm.invoke(user_message).content
 
