@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from base_game import Game
+from role_chat import Game
 from uuid import UUID, uuid4
 
 app = FastAPI()

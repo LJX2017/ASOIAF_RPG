@@ -31,20 +31,20 @@ RULES = ChatPromptTemplate.from_messages(
     ]
 )
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-pro", convert_system_message_to_human=True,
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-    },
-    temperature=0
-)
+# llm = ChatGoogleGenerativeAI(
+#     model="gemini-pro", convert_system_message_to_human=True,
+#     safety_settings={
+#         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+#     },
+#     temperature=0
+# )
 # key = os.getenv('OPENAI_API_KEY')
 # print(key)
 
-
+llm = ChatOpenAI(openai_api_key="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", model_name="gpt-3.5-turbo-0125", temperature=0)
 
 def generate_content(user_message: str):
     return llm.invoke(user_message).content
