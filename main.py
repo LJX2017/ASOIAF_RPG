@@ -34,7 +34,7 @@ async def get_initial_text(session_id: UUID = Query(...)):
     Endpoint to fetch initial text for a given session.
     """
     # if session_id not in games:
-    games[session_id] = Game(True)
+    games[session_id] = Game()
     initial_text = games[session_id].initial_loop()  # Placeholder method, implement accordingly
     print(session_id, games[session_id].chosen_event_plot)
     return {"text": initial_text}
