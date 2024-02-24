@@ -44,7 +44,7 @@ llm = ChatGoogleGenerativeAI(
 # key = os.getenv('OPENAI_API_KEY')
 # print(key)
 
-# llm = ChatOpenAI(openai_api_key="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", model_name="gpt-3.5-turbo-0125", temperature=0)
+# llm = ChatOpenAI(openai_api_key="sk-", model_name="gpt-3.5-turbo-0125", temperature=0)
 
 def generate_content(user_message: str):
     return llm.invoke(user_message).content

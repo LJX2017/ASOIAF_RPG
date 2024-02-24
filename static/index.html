@@ -4,9 +4,22 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css">
-    <title>Python CLI as Web App</title>
+    <link rel="stylesheet" href="game.css"> <!-- Link to your CSS file -->
+    <title>A Song of Ice and Fire</title>
 </head>
 <body>
+    <button id="achievementsButton">Achievements</button>
+
+        <!-- Achievements Modal/Section -->
+        <div id="achievementsModal" class="modal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2>Achievements</h2>
+                <ul id="achievementsList">
+                    <!-- Dynamically filled with achievements -->
+                </ul>
+            </div>
+        </div>
     <nav class="container-fluid">
         <ul>
             <li><strong>CLI Web App</strong></li>
@@ -36,69 +49,8 @@
     <footer class="container">
         <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Use</a></small>
     </footer>
-    <script>
-        function generateSessionId() {
-    // This function generates a pseudo-random UUID.
-            return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-                var r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-                return v.toString(16);
-            });
-        }
-        function getSessionId() {
-            let sessionId = sessionStorage.getItem('sessionId');
-            if (!sessionId) {
-                sessionId = generateSessionId();
-                sessionStorage.setItem('sessionId', sessionId);
-            }
-            return sessionId;
-        }
-
-        async function fetchInitialText() {
-            const sessionId = getSessionId();
-            const submitButton = document.querySelector('button[type="submit"]');
-            submitButton.disabled = true; // Disable the submit button at the start of fetching initial text
-            try {
-                const response = await fetch(`/api/initial_text?session_id=${sessionId}`);
-                const data = await response.json();
-                document.getElementById('cliOutput').textContent = data.text;
-            } catch (error) {
-                console.error('Error fetching initial text:', error);
-                // Optionally, handle the error, e.g., display an error message to the user
-            } finally {
-                submitButton.disabled = false; // Re-enable the submit button after fetching is completed
-            }
-        }
-
-        document.getElementById('cliForm').addEventListener('submit', async function(event) {
-            event.preventDefault();
-            const userInput = document.getElementById('userInput').value;
-            const submitButton = document.querySelector('button[type="submit"]');
-            submitButton.disabled = true; // Disable the submit button again when submitting
-
-            const sessionId = getSessionId();
-            try {
-                const response = await fetch('/api/submit_input', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ userInput, sessionId }),
-                });
-                const resultData = await response.json();
-                document.getElementById('cliOutput').textContent   = resultData.finalText;
-            } catch (error) {
-                console.error('Error during fetch operation:', error);
-                // Optionally handle the error, e.g., show an error message to the user
-            } finally {
-                submitButton.disabled = false; // Re-enable the submit button regardless of success or failure
-            }
-        });
-
-        document.addEventListener("DOMContentLoaded", function() {
-            console.log("DOMContentLoaded event fired");
-            fetchInitialText();
-        });
-    </script>
+    <script src="game.js"></script>
+    <!-- Achievements Button -->
 
 </body>
 </html>
