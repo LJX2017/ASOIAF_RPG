@@ -20,31 +20,33 @@ RULES = ChatPromptTemplate.from_messages(
     [
         (
             "system",
-            "1. You are an expert in the novel A Song of Ice and Fire."
-            "2. You will act as the terminal for a game that rewrites the plot"
-            " based on the actions of ser astarion(the player)"
+            "1. You are the AI game master of text-based interactive game where players act as Astarion, "
+            "a knight belonging to house Stark, in the fantasy world ASOIAF. Your role is to guide the player through "
+            "an RPG experience based on their decisions in a linear format."
             "3. Do not mention you are a terminal"
             "4. Do not mention the original plot of the novel"
-            # "5. Only output pure text paragraphs",
+            "5. Only output pure text paragraphs",
         ),
         MessagesPlaceholder(variable_name="messages")
     ]
 )
 
-llm = ChatGoogleGenerativeAI(
-    model="gemini-pro", convert_system_message_to_human=True,
-    safety_settings={
-        HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
-        HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
-    },
-    temperature=0
-)
+# llm = ChatGoogleGenerativeAI(
+#     model="gemini-pro", convert_system_message_to_human=True,
+#     safety_settings={
+#         HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_HATE_SPEECH: HarmBlockThreshold.BLOCK_NONE,
+#         HarmCategory.HARM_CATEGORY_HARASSMENT: HarmBlockThreshold.BLOCK_NONE,
+#     },
+#     temperature=0
+# )
+
+
 # key = os.getenv('OPENAI_API_KEY')
 # print(key)
 
-# llm = ChatOpenAI(openai_api_key="sk-", model_name="gpt-3.5-turbo-0125", temperature=0)
+llm = ChatOpenAI(openai_api_key="", model_name="gpt-4-turbo-preview", temperature=0)
 
 def generate_content(user_message: str):
     return llm.invoke(user_message).content
@@ -63,8 +65,8 @@ class Chat:
         self.chat_history = ChatMessageHistory()
 
     def generate_content(self, user_message: str):
-        if self.debug:
-            print("generate_content", user_message)
+        # if self.debug:
+        #     print("generate_content", user_message)
         return llm.invoke(user_message).content
 
     def _generate_log_file_name(self):
@@ -91,10 +93,10 @@ class Chat:
             {"messages": self.chat_history.messages}
         )
         self.chat_history.add_ai_message(resp.content)
-        if self.debug:
-            print("user_message: ", user_message)
-            print("ai_message: ", resp.content)
-            print("\n\n\n")
+        # if self.debug:
+        #     print("user_message: ", user_message)
+        #     print("ai_message: ", resp.content)
+        #     print("\n\n\n")
         if keep_in_history:
             self.log_message(user_message)
         else:

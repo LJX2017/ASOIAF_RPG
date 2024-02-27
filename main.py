@@ -2,8 +2,9 @@ from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from role_chat import Game
+from base_game import Game
 from uuid import UUID, uuid4
+import json
 
 app = FastAPI()
 
@@ -34,11 +35,22 @@ async def get_initial_text(session_id: UUID = Query(...)):
     Endpoint to fetch initial text for a given session.
     """
     # if session_id not in games:
-    games[session_id] = Game()
+    games[session_id] = Game(True)
     initial_text = games[session_id].initial_loop()  # Placeholder method, implement accordingly
     print(session_id, games[session_id].chosen_event_plot)
     return {"text": initial_text}
 
+@app.get("/api/achievements")
+async def get_achievements(session_id: UUID = Query(...)):
+    """
+    Endpoint to fetch achievements for a given session.
+    """
+    # if session_id not in games:
+    try:
+        achievements = json.loads(games[session_id].get_achievements())
+    except Exception:
+        achievements = {}
+    return {"achievements": achievements}
 
 @app.post("/api/submit_input")
 async def submit_input(user_input: UserInput):
@@ -49,5 +61,5 @@ async def submit_input(user_input: UserInput):
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
     response_text = games[session_id].next_loop(user_input.userInput)  # Placeholder method, implement accordingly
-    print(session_id, games[session_id].chosen_event_plot)
+    # print(session_id, games[session_id].chosen_event_plot)
     return {"finalText": response_text}
