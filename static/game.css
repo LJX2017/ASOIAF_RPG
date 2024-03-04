@@ -32,3 +32,31 @@
     text-decoration: none;
     cursor: pointer;
 }
+
+#iconsAndAchievementContainer {
+    display: flex;
+    justify-content: center; /* Align items to the center horizontally */
+    align-items: center; /* Align items to the center vertically */
+    gap: 1em; /* This sets the gap between each flex item */
+    padding: 1em; /* This adds some padding inside the container */
+}
+
+.icon, .achievement-button {
+    flex-grow: 1; /* Allows the button and icons to grow and fill the space */
+    flex-basis: 20%; /* This will define an initial size before growing */
+    max-width: 120px; /* Set a max-width to keep proportions */
+    height: auto; /* Height is auto to keep the aspect ratio of the icons */
+    padding: 1em; /* Add padding to make the button bigger */
+}
+
+#historyContainer {
+    position: fixed;
+    left: 0;
+    top: 0;
+    width: 20%;
+    height: 100%;
+    overflow: auto;
+    background: #e0e0e0;
+    display: none;
+    padding: 20px;
+}

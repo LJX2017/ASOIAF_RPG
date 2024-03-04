@@ -40,6 +40,7 @@ async def get_initial_text(session_id: UUID = Query(...)):
     print(session_id, games[session_id].chosen_event_plot)
     return {"text": initial_text}
 
+
 @app.get("/api/achievements")
 async def get_achievements(session_id: UUID = Query(...)):
     """
@@ -52,6 +53,7 @@ async def get_achievements(session_id: UUID = Query(...)):
         achievements = {}
     return {"achievements": achievements}
 
+
 @app.post("/api/submit_input")
 async def submit_input(user_input: UserInput):
     """
@@ -63,3 +65,26 @@ async def submit_input(user_input: UserInput):
     response_text = games[session_id].next_loop(user_input.userInput)  # Placeholder method, implement accordingly
     # print(session_id, games[session_id].chosen_event_plot)
     return {"finalText": response_text}
+
+
+@app.get("/api/conversation_history")
+async def conversation_history(session_id: UUID = Query(...)):
+    """
+    Endpoint to fetch conversation history for a given session.
+    """
+    print("URGENT: REACHED HISTORY")
+    if session_id not in games:
+        raise HTTPException(status_code=404, detail="Session not found")
+    response_text_list = games[session_id].get_conversation_history()  # Placeholder method, implement accordingly
+    # print(session_id, games[session_id].chosen_event_plot)
+    return response_text_list
+
+
+@app.get("/api/current_progress")
+async def current_progress(session_id: UUID = Query(...)):
+    """
+    Endpoint to fetch current progress for a given session.
+    """
+    if session_id not in games:
+        raise HTTPException(status_code=404, detail="Session not found")
+    return {"progress": [games[session_id].current_event_id, games[session_id].total_events]}

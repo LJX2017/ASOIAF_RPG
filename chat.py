@@ -46,7 +46,7 @@ RULES = ChatPromptTemplate.from_messages(
 # key = os.getenv('OPENAI_API_KEY')
 # print(key)
 
-llm = ChatOpenAI(openai_api_key="", model_name="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(openai_api_key="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", model_name="gpt-3.5-turbo", temperature=0)
 
 def generate_content(user_message: str):
     return llm.invoke(user_message).content
@@ -57,7 +57,7 @@ class Chat:
         self.debug = debug
         self.log_dir = "logs"
         if not Path(self.log_dir).exists():
-            Path(self.log_dir).touch()
+            Path(self.log_dir).mkdir()
         self.log_file = Path(self._generate_log_file_name())
         if not self.log_file.exists():
             self.log_file.touch()

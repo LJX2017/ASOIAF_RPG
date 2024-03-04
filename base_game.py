@@ -1,3 +1,4 @@
+import json
 from pathlib import Path
 from chat import Chat
 import random
@@ -26,6 +27,7 @@ class Game:
         self.chat = Chat(debug)
         self.chosen_event_plot = ""
         self.changes_to_plot = ""
+        self.total_events = TOTAL_EVENTS
         self.achievements = [
             {
                 "id": 1,
@@ -95,7 +97,7 @@ class Game:
                   f"Make minimal changes to the original plot, unless Astarion has made a significant change in the past."
                   f"Detail how this event unfolds without presenting the outcome, emphasizing ***ser Astarion***'s role."
                   f"prompt the user to make a decision based on the event."
-                  f"You should ask ***What is your choice?***"
+                  f"You should ask ***What is your choice?*** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
                   f"Your 50 word paragraph elaborating on the event's unfold:")
         # self
         return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
@@ -107,23 +109,31 @@ class Game:
         :return:
         """
         prompt = (f"SYSTEM: Here is the current event: ***{self.chosen_event_plot}***"
-                  f"The user made a decision of ***{user_input}***"
-                  f"You should check for statements and change them into attempts."
+                  f"The user made a action of ***{user_input}***"
+                  f"You should parse the user action into attempts."
                   f"e.g. user says ***I want to kill Cersi*** parse it into *** Astarion attempts to kill Cersi."
-                  f"e.g. user says ***I fly to Kings Landing*** parse it into ***Astarion jumps into the sky and tries to fly***."
-                  f"do not make any explaination, breifly output Astarion's (attempted) action:")
+                  f"do not make any explanation"
+                  f"Do not change the users action, only output the parsed action."
+                  f"briefly output Astarion's (attempted) action:")
         parsed_input = self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
         if self.debug:
-            print(f"parsing the input from the user{user_input}\n result: {parsed_input}\n")
+            print(f"parsing the input from the user: {user_input}\n result: {parsed_input}\n")
         return parsed_input
 
     def achievement_evaluator(self):
         prompt = (f"SYSTEM: Here are the achievements available:***\n{self.achievements}***"
                   f"change the achievement's accomplished status to true if the user has achieved it."
-                  f"Unless there is clear evidence in our message history, do not change the status of the achievements from False to True."
-                  f"Output in json format the updated achievements:")
+                  f"Unless there is direct evidence in our message history"
+                  f"do not change the status of the achievements from False to True."
+                  f"Output the updated achievements(match the format provided to you) in json format:")
         resp = self.chat.send_message(prompt, keep_in_history=False)
-        resp = resp.replace("json", "").replace("```", "").replace("\n", "")
+        resp = resp.replace("json", "").replace("```", "")
+        try:
+            achievements = json.loads(resp)
+            if "achievements" in achievements:
+                resp = json.dumps(achievements["achievements"])
+        except Exception:
+            pass
         self.achievements = resp
         if self.debug:
             print(f"achievement_evaluator\nresp: {resp}\n\n")
@@ -139,14 +149,14 @@ class Game:
         :return:
         """
         choice = self.action_evaluator(user_input)
-        prompt = (f"SYSTEM: Considering ***ser Astarion***'s decision: \"{choice}\", "
-                  f"how does it influence the outcome of the event: {self.chosen_event_plot}? "
-                  f"Consider these questions when developing the outcome:"
-                  f"1. Is the decision possible in the context of ASOIAF?\n"
-                  f"2. Is Astarion capable of making such decisions?(e.g. Astarion does not know Joffery's birth unless mentioned in previous conversation)\n"
-                  f"3. realism is key, Astarion cannot do impossible things (e.g. Astarion cannot fly or teleport or win in a fight against the mountain)\n"
-                  f"4. The outcome should be a direct result of Astarion's decision"
-                  f"5. If you deem the action impossible, be creative and present a humorous result(how they attempted to but failed)\n"
+        prompt = (f"SYSTEM: Consider the outcome of the event: ***{self.chosen_event_plot}*** with"
+                  f"***ser Astarion***'s decision: ***\"{choice}\"***\n"
+                  f"Consider these questions when developing the outcome:\n"
+                  f"1. Is the decision logically possible in the context of ASOIAF?(e.g. the user can't introduce someone who does not exist in ASOIAF world)\n"
+                  f"2. Is Astarion capable of making such actions?(e.g. Astarion does not know Joffery's bastardy unless mentioned in previous conversation)\n"
+                  f"3. realism is key, Astarion cannot do impossible things for humans(e.g. Astarion cannot fly or teleport or change into a monster)\n"
+                  f"4. The outcome should be a direct result of Astarion's decision.\n"
+                  f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
                   f"Your 50 word paragraph:")
 
         result = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
@@ -154,29 +164,28 @@ class Game:
         self.achievement_evaluator()
         if self.debug:
             print(f"generated result:\n {result}\n")
-        return result
+        return choice + '\n' + result
 
     def summarize_player_action(self, choice: str, result: str):
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
                   f"Summarize the whole event above into a single, concise paragraph of 50 words")
         resp = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
         self.chat.add_to_message_history(resp, False)
-        self.chat.add_to_message_history("I will remember this", True)
+        self.chat.add_to_message_history("I will remember this change to plot", True)
 
     def pick_event_id(self, beg: int, end: int):
         return beg
         # chosen_id = random.randint((beg + end + 1) // 2, end)
-        # return chosen_id
-        prompt = (f"SYSTEM: Choose the most important event in the plot "
-                  f"from this list:***\n{generate_context(beg, end, include_id=True)}***\n"
-                  f"Only output one numeric number representing the event's ID\n"
-                  f"Your number:")
-        resp = self.chat.generate_content(prompt)
-        if self.debug:
-            print("pick_event_id\n", resp, '\n\n')
-        if resp[0:2] == 'id':
-            resp = resp[2:]
-        return int(resp)
+        # prompt = (f"SYSTEM: Choose the most important event in the plot "
+        #           f"from this list:***\n{generate_context(beg, end, include_id=True)}***\n"
+        #           f"Only output one numeric number representing the event's ID\n"
+        #           f"Your number:")
+        # resp = self.chat.generate_content(prompt)
+        # if self.debug:
+        #     print("pick_event_id\n", resp, '\n\n')
+        # if resp[0:2] == 'id':
+        #     resp = resp[2:]
+        # return int(resp)
 
     def part_by_part_summery(self, beg: int, end: int, gap=GAP):
         """
@@ -225,8 +234,14 @@ class Game:
         self.current_event_id = chosen_event_id + 1
         return result_of_event + full_summery + self.chosen_event_plot
 
+    def get_conversation_history(self) -> list[str]:
+        if self.debug:
+            print("request chat history: ", [i.content for i in self.chat.chat_history.messages if i.content != "I will remember this change to plot"])
+        return [i.content for i in self.chat.chat_history.messages if i.content != "I will remember this change to plot"]
+
 
 if __name__ == "__main__":
+    game = Game(True)
     game = Game(True)
     print(game.initial_loop())
     while True:

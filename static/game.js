@@ -1,23 +1,17 @@
-// Generates a pseudo-random UUID.
-function generateSessionId() {
-    return 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, function(c) {
-        const r = Math.random() * 16 | 0, v = c === 'x' ? r : (r & 0x3 | 0x8);
-        return v.toString(16);
-    });
-}
+// Utility Functions
+const generateSessionId = () => 'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, c => {
+    const r = Math.random() * 16 | 0;
+    return (c === 'x' ? r : (r & 0x3 | 0x8)).toString(16);
+});
 
-// Retrieves or creates a new session ID and stores it in sessionStorage.
-function getSessionId() {
+const getSessionId = () => {
     let sessionId = sessionStorage.getItem('sessionId');
     if (!sessionId) {
         sessionId = generateSessionId();
         sessionStorage.setItem('sessionId', sessionId);
     }
     return sessionId;
-}
-document.addEventListener("DOMContentLoaded", function() {
-
-    // Example achievements data
+};
     const achievements = [
         {
         id: 1,
@@ -62,83 +56,43 @@ document.addEventListener("DOMContentLoaded", function() {
         accomplished: false
       }
     ];
-
-    const achievementsButton = document.getElementById('achievementsButton');
-    const achievementsModal = document.getElementById('achievementsModal');
-    const closeSpan = document.getElementsByClassName('close')[0];
-
-    achievementsButton.onclick = function() {
-        populateAchievements(achievements);
-        achievementsModal.style.display = 'block';
-    }
-
-    closeSpan.onclick = function() {
-        achievementsModal.style.display = 'none';
-    }
-
-    window.onclick = function(event) {
-        if (event.target === achievementsModal) {
-            achievementsModal.style.display = 'none';
-        }
-    }
-    initializeIntroduction();
-});
-function populateAchievements(achievements) {
+// Achievement Management
+const populateAchievements = achievements => {
     const list = document.getElementById('achievementsList');
-    list.innerHTML = ''; // Clear existing achievements
-
-    achievements.forEach(achievement => {
+    list.innerHTML = ''; // Clear list
+    achievements.forEach(({ name, description, accomplished }) => {
+        const iconName = name.replace(/\s+/g, '_') + (accomplished ? "" : "-modified") + ".png";
         const item = document.createElement('li');
-        const iconName = achievement.name.replace(/\s+/g, '_') + ".png";
         item.innerHTML = `
-            <img src="icons/${iconName}" alt="${achievement.name}" style="width: 100px; height: 100px; vertical-align: middle;">
-            ${achievement.name} - ${achievement.description} ${achievement.accomplished ? '✅' : '❌'}
+            <img src="icons/${iconName}" alt="${name}" style="width: 100px; height: 100px; vertical-align: middle;">
+            ${name} - ${description} ${accomplished ? '✅' : '❌'}
         `;
         list.appendChild(item);
     });
-}
 
+};
 
-function initializeIntroduction() {
-    // Display the introductory text in the text box (or another element if preferred)
-    const cliOutput = document.getElementById('cliOutput');
-    cliOutput.textContent = "Welcome to the ASOIAF Adventure. Your mission is to save Ned Stark. Click 'Start' to begin.";
-    const userInputField = document.getElementById('userInput');
-    userInputField.disabled = true; // Disable input field
-    // Change the button text to "Start"
+// Game Initialization and Control
+const initializeIntroduction = () => {
+    document.getElementById('cliOutput').textContent = "Welcome to the ASOIAF Adventure. Your mission is to save Ned Stark. Click 'Start' to begin.";
+    document.getElementById('userInput').disabled = true;
     const submitButton = document.querySelector('button[type="submit"]');
     submitButton.textContent = "Start";
+    document.getElementById('cliForm').addEventListener('submit', handleGameStart, { once: true });
+};
 
-    // Listen for the first submit to start the game
-    const form = document.getElementById('cliForm');
-    form.addEventListener('submit', function(event) {
-        event.preventDefault(); // Prevent form submission
-        const userInputField = document.getElementById('userInput');
-        userInputField.disabled = false;
-        startGame(); // Call the function to start the game
-    }, { once: true }); // Ensure the listener only fires once
-}
-
-function startGame() {
-    // Reset the button text for game use
-    const submitButton = document.querySelector('button[type="submit"]');
-    submitButton.textContent = "Submit";
-
-    // Clear the introductory text and prepare for game input
-    const cliOutput = document.getElementById('cliOutput');
-    cliOutput.textContent = "";
-    // Disable the chatbox for input during the initial game setup
-
-    // Now the form submission should handle game inputs
-    // You might also want to fetch the initial game state or text here
+const handleGameStart = event => {
+    event.preventDefault();
+    document.getElementById('userInput').disabled = false;
+    document.querySelector('button[type="submit"]').textContent = "Submit";
+    document.getElementById('cliOutput').textContent = "";
     fetchInitialText();
     setUpFormSubmission();
-}
-// Fetches initial text for the session and updates the UI.
-async function fetchInitialText() {
+};
+
+const fetchInitialText = async () => {
     const sessionId = getSessionId();
     const submitButton = document.querySelector('button[type="submit"]');
-
     submitButton.disabled = true;
     try {
         const response = await fetch(`/api/initial_text?session_id=${sessionId}`);
@@ -149,48 +103,117 @@ async function fetchInitialText() {
     } finally {
         submitButton.disabled = false;
     }
-}
+};
 
-// Sets up the form submission handler to send user input to the server.
-function setUpFormSubmission() {
-    document.getElementById('cliForm').addEventListener('submit', async function(event) {
+const setUpFormSubmission = () => {
+    document.getElementById('cliForm').addEventListener('submit', async event => {
         event.preventDefault();
         const userInput = document.getElementById('userInput').value;
         const submitButton = document.querySelector('button[type="submit"]');
         submitButton.disabled = true;
 
-
         try {
             const sessionId = getSessionId();
             const response = await fetch('/api/submit_input', {
                 method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                },
+                headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ userInput, sessionId }),
             });
             const resultData = await response.json();
-
             document.getElementById('cliOutput').textContent = resultData.finalText;
-            // const sessionId = getSessionId(); // Ensure you have a way to get the current session ID
-            const achievementsResponse = await fetch(`/api/achievements?session_id=${sessionId}`, {
-                method: 'GET',
-                // Remove the Content-Type header since it's a GET request
-            });
+            populateConversationHistory();
+            fetchAndUpdateProgressBar();
+            const achievementsResponse = await fetch(`/api/achievements?session_id=${sessionId}`);
             const achievementsData = await achievementsResponse.json();
-            // Populate achievements with the received data
             populateAchievements(achievementsData.achievements);
+            populateIconsAndButton(achievementsData.achievements);
         } catch (error) {
             console.error('Error during fetch operation:', error);
         } finally {
             submitButton.disabled = false;
         }
     });
-}
+};
 
-// Initializes the app once the DOM is fully loaded.
-// document.addEventListener("DOMContentLoaded", function() {
-//     console.log("DOMContentLoaded event fired");
-//     fetchInitialText();
-//     setUpFormSubmission();
-// });
+// Modal and Achievements UI
+const setupAchievementsModal = () => {
+    const achievementsModal = document.getElementById('achievementsModal');
+    document.getElementById('achievementsButton').onclick = () => {
+        populateAchievements(achievements); // Assuming 'achievements' is globally accessible
+        achievementsModal.style.display = 'block';
+    };
+    document.getElementsByClassName('close')[0].onclick = () => achievementsModal.style.display = 'none';
+    window.onclick = event => {
+        if (event.target === achievementsModal) achievementsModal.style.display = 'none';
+    };
+};
+
+// Main
+document.addEventListener("DOMContentLoaded", () => {
+    initializeIntroduction();
+    populateIconsAndButton(achievements);
+    setupAchievementsModal();
+});
+
+const populateIconsAndButton = (achievements) => {
+    const container = document.getElementById('iconsAndAchievementContainer');
+    container.innerHTML = ''; // Clear container
+
+    // Add the first three achievements as icons
+    achievements.slice(0, 3).forEach(achievement => {
+    const iconFileName = achievement.name.replace(/\s+/g, '_') + (achievement.accomplished ? "" : "-modified") + ".png";
+    const iconElement = document.createElement('img');
+    iconElement.src = `icons/${iconFileName}`; // Update the path accordingly
+    iconElement.alt = achievement.description;
+    iconElement.className = 'icon'; // Use this class for styling
+    container.appendChild(iconElement);
+});
+
+    // Create and add the Achievement button
+    const button = document.createElement('button');
+    button.id = 'achievementsButton';
+    button.textContent = 'Achievements';
+    button.className = 'achievement-button'; // Use this class for styling if needed
+    container.appendChild(button);
+};
+
+const populateConversationHistory = async () => {
+    const historyContainer = document.getElementById('conversationHistory');
+    historyContainer.innerHTML = ''; // Clear previous content
+
+    try {
+        const sessionId = getSessionId(); // Assuming getSessionId() retrieves the current session
+        const response = await fetch(`/api/conversation_history?session_id=${sessionId}`);
+        const data = await response.json(); // Assuming the endpoint returns a JSON list of strings
+
+        // Append each message as a paragraph to the history container
+        data.forEach(message => {
+            const p = document.createElement('p');
+            p.textContent = message;
+            historyContainer.appendChild(p);
+        });
+    } catch (error) {
+        console.error('Error fetching conversation history:', error);
+    }
+};
+
+function fetchAndUpdateProgressBar() {
+    fetch(`/api/current_progress?session_id=${getSessionId()}`)
+    .then(response => {
+        if (!response.ok) {
+            throw new Error('Network response was not ok');
+        }
+        return response.json();
+    })
+    .then(data => {
+        const currentProgress = data.progress[0];
+        const totalEvents = data.progress[1];
+        const percentage = (currentProgress / totalEvents) * 100;
+
+        document.getElementById("progressBar").style.width = percentage + '%';
+        document.getElementById("progressText").innerText = `${currentProgress}/${totalEvents}`;
+    })
+    .catch(error => {
+        console.error('There has been a problem with your fetch operation:', error);
+    });
+}
