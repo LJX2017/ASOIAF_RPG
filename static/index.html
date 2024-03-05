@@ -10,65 +10,72 @@
 <body>
 <!--    <button id="achievementsButton">Achievements</button>-->
 
-    <nav class="container-fluid">
-        <ul>
-            <li><strong>CLI Web App</strong></li>
-        </ul>
-        <ul>
-            <li><a href="#">Home</a></li>
-            <li><a href="#" role="button">About</a></li>
-        </ul>
-    </nav>
-    <div id="iconsAndAchievementContainer" style="text-align:center; margin-bottom: 20px;">
-    </div>
-        <div id="achievementsModal" class="modal">
-            <div class="modal-content">
-                <span class="close">&times;</span>
-                <h2>Achievements</h2>
-                <ul id="achievementsList">
-                    <!-- Dynamically filled with achievements -->
-                </ul>
-            </div>
-        </div>
-    <main class="container">
-        <div class="grid" style="display: flex;">
-            <!-- Sidebar for Conversation History -->
-        <!-- Sidebar for Conversation History -->
-            <aside style="flex: 1; border-right: 2px solid #ddd; padding-right: 20px;">
-                <h2>Conversation History</h2>
-                <div id="conversationHistory" style="overflow-y: auto; height: 400px; background: #e9e9e9; padding: 20px; border-radius: 5px;">
-                    <!-- Conversation history will be displayed here -->
-                </div>
-                <div id="progressBarContainer" style="width: 100%; background-color: white; border: 1px solid #ddd; border-radius: 5px; height: 20px; overflow: hidden;">
-                    <div id="progressBar" style="width: 0%; height: 100%; background-color: #4CAF50; transition: width 0.5s ease-in-out;"></div>
-                </div>
-                <div id="progressText" style="text-align: center; margin-top: 5px;">0/26</div>
-            </aside>
+<nav class="container-fluid">
+    <ul>
+        <li><strong>CLI Web App</strong></li>
+    </ul>
+    <ul>
+        <li><a href="#">Home</a></li>
+        <li><a href="#" role="button">About</a></li>
+    </ul>
+</nav>
 
-            <!-- Main Content Section -->
-            <section style="flex: 3; padding-left: 20px;">
-                <hgroup>
-                    <h2>Python CLI Integration</h2>
-                    <h3>See your CLI program's output here:</h3>
-                </hgroup>
-                <div id="cliOutput" style="white-space: pre-wrap; background: #f0f0f0; padding: 20px; border-radius: 5px; min-height: 400px;">
-                    <!-- CLI messages will be displayed here -->
-                </div>
-                <form id="cliForm">
-                    <input type="text" id="userInput" name="userInput" placeholder="Enter your input" aria-label="User input" required>
-                    <button type="submit">Submit</button>
-                    <!-- Button to show conversation history -->
-<!--                    <button type="button" onclick="showHistory()">Show History</button>-->
-                </form>
-            </section>
-        </div>
-<!--        <div id="historyContainer"></div>-->
-    </main>
-    <footer class="container">
-        <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Use</a></small>
-    </footer>
-    <script src="game.js"></script>
-    <!-- Achievements Button -->
+<div id="iconsAndAchievementContainer" style="text-align:center; margin-bottom: 20px;">
+    <button id="achievementsButton" class="achievement-button" type="button">Achievements</button>
+</div>
+<div id="achievementsModal" class="modal">
+    <div class="modal-content">
+        <span class="close">&times;</span>
+        <h2>Achievements</h2>
+        <ul id="achievementsList">
+            <!-- Dynamically filled with achievements -->
+        </ul>
+    </div>
+</div>
+<main class="container">
+    <div class="grid" style="display: flex;">
+        <!-- Sidebar for Conversation History -->
+        <!-- Sidebar for Conversation History -->
+        <aside style="flex: 1; border-right: 2px solid #ddd; padding-right: 20px;">
+            <h2>Conversation History</h2>
+            <div id="conversationHistory"
+                 style="overflow-y: auto; height: 400px; background: #e9e9e9; padding: 20px; border-radius: 5px;">
+                <!-- Conversation history will be displayed here -->
+            </div>
+            <div id="progressBarContainer"
+                 style="width: 100%; background-color: white; border: 1px solid #ddd; border-radius: 5px; height: 20px; overflow: hidden;">
+                <div id="progressBar"
+                     style="width: 0%; height: 100%; background-color: #4CAF50; transition: width 0.5s ease-in-out;"></div>
+            </div>
+            <div id="progressText" style="text-align: center; margin-top: 5px;">0/26</div>
+        </aside>
+
+        <!-- Main Content Section -->
+        <section style="flex: 3; padding-left: 20px;">
+            <hgroup>
+                <h2>Python CLI Integration</h2>
+                <h3>See your CLI program's output here:</h3>
+            </hgroup>
+            <div id="cliOutput"
+                 style="white-space: pre-wrap; background: #f0f0f0; padding: 20px; border-radius: 5px; min-height: 400px;">
+                <!-- CLI messages will be displayed here -->
+            </div>
+            <form id="cliForm">
+                <input type="text" id="userInput" name="userInput" placeholder="Enter your input"
+                       aria-label="User input" required>
+                <button type="submit">Submit</button>
+                <!-- Button to show conversation history -->
+                <!--                    <button type="button" onclick="showHistory()">Show History</button>-->
+            </form>
+        </section>
+    </div>
+    <!--        <div id="historyContainer"></div>-->
+</main>
+<footer class="container">
+    <small><a href="#">Privacy Policy</a> • <a href="#">Terms of Use</a></small>
+</footer>
+<script src="game.js"></script>
+<!-- Achievements Button -->
 
 </body>
 </html>

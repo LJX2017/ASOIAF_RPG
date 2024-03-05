@@ -98,6 +98,7 @@ const fetchInitialText = async () => {
         const response = await fetch(`/api/initial_text?session_id=${sessionId}`);
         const data = await response.json();
         document.getElementById('cliOutput').textContent = data.text;
+        fetchAndUpdateProgressBar();
     } catch (error) {
         console.error('Error fetching initial text:', error);
     } finally {

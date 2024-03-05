@@ -95,9 +95,9 @@ class Game:
         prompt = (f"SYSTEM: Adapt the plot: \"{events[end]}\" to an event in our game world version of ASOIAF universe."
                   f"Account for Astarion's actions in the past, if any."
                   f"Make minimal changes to the original plot, unless Astarion has made a significant change in the past."
-                  f"Detail how this event unfolds without presenting the outcome, emphasizing ***ser Astarion***'s role."
-                  f"prompt the user to make a decision based on the event."
-                  f"You should ask ***What is your choice?*** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
+                  f"Detail how this event unfolds without presenting the outcome, emphasizing ser Astarion's role."
+                  f"prompt the user(who is acting as Astarion) to make a decision based on the event."
+                  f"You should ask the player ***What is your choice?*** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
                   f"Your 50 word paragraph elaborating on the event's unfold:")
         # self
         return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
@@ -115,6 +115,16 @@ class Game:
                   f"do not make any explanation"
                   f"Do not change the users action, only output the parsed action."
                   f"briefly output Astarion's (attempted) action:")
+        prompt = (
+            f"SYSTEM: You are presented with a current event scenario: ***{self.chosen_event_plot}***. "
+            f"In response, the user has initiated an action: ***{user_input}***. "
+            "Your task is to interpret the user's action as specific attempts within the scenario. "
+            "For example, if the user says ***I want to kill Cersei***, you should parse and rephrase it as ***Astarion attempts to kill Cersei.*** "
+            "Your response should directly convert the user's action into a character's attempt without adding any explanations or modifications to the original action. "
+            "Simply translate the user's intent into the character’s attempted action, maintaining the original intention as closely as possible. "
+            "Output the character's name followed by their (attempted) action in a concise manner."
+        )
+
         parsed_input = self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
         if self.debug:
             print(f"parsing the input from the user: {user_input}\n result: {parsed_input}\n")
@@ -149,16 +159,28 @@ class Game:
         :return:
         """
         choice = self.action_evaluator(user_input)
-        prompt = (f"SYSTEM: Consider the outcome of the event: ***{self.chosen_event_plot}*** with"
-                  f"***ser Astarion***'s decision: ***\"{choice}\"***\n"
+        prompt = (f"SYSTEM: Consider the outcome of the event: ***{self.chosen_event_plot}*** regarding\n"
+                  f"Astarion's action: ***{choice}***\n"
                   f"Consider these questions when developing the outcome:\n"
                   f"1. Is the decision logically possible in the context of ASOIAF?(e.g. the user can't introduce someone who does not exist in ASOIAF world)\n"
                   f"2. Is Astarion capable of making such actions?(e.g. Astarion does not know Joffery's bastardy unless mentioned in previous conversation)\n"
                   f"3. realism is key, Astarion cannot do impossible things for humans(e.g. Astarion cannot fly or teleport or change into a monster)\n"
                   f"4. The outcome should be a direct result of Astarion's decision.\n"
                   f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
-                  f"Your 50 word paragraph:")
-
+                  f"6. Do not change the Astarion's action.\n"
+                  f"7. Give a clear, definite result of the event\n"
+                  f"The result of  50 word paragraph:")
+        prompt = (f"SYSTEM: Evaluate the event's outcome: ***{self.chosen_event_plot}*** in light of\n"
+                  f"Astarion's chosen action: ***{choice}***.\n"
+                  f"When crafting the outcome, consider the following critical aspects:\n"
+                  f"1. Logical Consistency: Ensure the action fits within the ASOIAF universe. (For instance, introducing non-existent characters is off-limits.)\n"
+                  f"2. Character Capability: Assess if Astarion has the knowledge and skills to execute the action. (e.g., Astarion is unaware of Joffrey's illegitimacy unless previously discussed.)\n"
+                  f"3. Realism: Astarion's actions must be within human capabilities; supernatural feats like flying or teleporting are not permitted.\n"
+                  f"4. Direct Consequence: The outcome must be a direct consequence of Astarion's action.\n"
+                  f"5. Creativity in Constraints: If the action is deemed logically impossible, craft a humorous narrative on how Astarion's attempt unfolds and fails.\n"
+                  f"6. Action Integrity: Do not alter Astarion's original action.\n"
+                  f"7. Give a clear, definite result of the event\n"
+                  f"Craft a concise outcome in a paragraph of approximately 50 words:")
         result = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
         self.summarize_player_action(choice, result)
         self.achievement_evaluator()
@@ -168,7 +190,8 @@ class Game:
 
     def summarize_player_action(self, choice: str, result: str):
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
-                  f"Summarize the whole event above into a single, concise paragraph of 50 words")
+                  f"Summarize the whole event above into a single, concise paragraph less than 30 words only including"
+                  f" the event, astarion's action, and the result.")
         resp = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
         self.chat.add_to_message_history(resp, False)
         self.chat.add_to_message_history("I will remember this change to plot", True)
@@ -227,7 +250,8 @@ class Game:
         result_of_event = self.generate_result(user_input)
         if self.debug:
             print("CHAT HISTORY: ", self.chat.chat_history)
-
+        if self.current_event_id >= TOTAL_EVENTS:
+            return result_of_event
         chosen_event_id = self.pick_event_id(self.current_event_id, end)
         full_summery = self.part_by_part_summery(self.current_event_id, chosen_event_id - 1)
         self.chosen_event_plot = self.generate_new_event(chosen_event_id)
@@ -241,7 +265,6 @@ class Game:
 
 
 if __name__ == "__main__":
-    game = Game(True)
     game = Game(True)
     print(game.initial_loop())
     while True:
