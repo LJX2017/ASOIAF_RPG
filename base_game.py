@@ -100,7 +100,7 @@ class Game:
                   f"You should ask the player ***What is your choice?*** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
                   f"Your 50 word paragraph elaborating on the event's unfold:")
         # self
-        return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
+        return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n' + "Type the choice number or anything you want to do"
 
     def action_evaluator(self, user_input: str):
         """
