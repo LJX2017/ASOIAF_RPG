@@ -2,7 +2,7 @@ from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from base_game import Game
+from dynamic_game import Game
 from uuid import UUID, uuid4
 import json
 
@@ -87,4 +87,4 @@ async def current_progress(session_id: UUID = Query(...)):
     """
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
-    return {"progress": [games[session_id].current_event_id, games[session_id].total_events]}
+    return {"progress": [games[session_id].current_event_id, 26]}
