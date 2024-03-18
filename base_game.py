@@ -28,6 +28,7 @@ class Game:
         self.chosen_event_plot = ""
         self.changes_to_plot = ""
         self.total_events = TOTAL_EVENTS
+        self.end_game = False
         self.achievements = [
             {
                 "id": 1,
@@ -169,24 +170,45 @@ class Game:
                   f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
                   f"6. Do not change the Astarion's action.\n"
                   f"7. Give a clear, definite result of the event\n"
-                  f"The result of  50 word paragraph:")
-        prompt = (f"SYSTEM: Evaluate the event's outcome: ***{self.chosen_event_plot}*** in light of\n"
-                  f"Astarion's chosen action: ***{choice}***.\n"
-                  f"When crafting the outcome, consider the following critical aspects:\n"
-                  f"1. Logical Consistency: Ensure the action fits within the ASOIAF universe. (For instance, introducing non-existent characters is off-limits.)\n"
-                  f"2. Character Capability: Assess if Astarion has the knowledge and skills to execute the action. (e.g., Astarion is unaware of Joffrey's illegitimacy unless previously discussed.)\n"
-                  f"3. Realism: Astarion's actions must be within human capabilities; supernatural feats like flying or teleporting are not permitted.\n"
-                  f"4. Direct Consequence: The outcome must be a direct consequence of Astarion's action.\n"
-                  f"5. Creativity in Constraints: If the action is deemed logically impossible, craft a humorous narrative on how Astarion's attempt unfolds and fails.\n"
-                  f"6. Action Integrity: Do not alter Astarion's original action.\n"
-                  f"7. Give a clear, definite result of the event\n"
-                  f"Craft a concise outcome in a paragraph of approximately 50 words:")
+                  "only Output in json format{'outcome': str, a 50 word paragraph describing the outcome."
+                  "'major_change_of_plot': bool, whether the outcome deviates from the plot provided.}:"
+                  "'future_outcome': str, empty if no major changes in result. Otherwise, in 100 words explain the fate of the Stark family in this new setting}'"
+                  "'saved_ned': bool, whether Ned Stark is saved in this new plot.}'")
+        # prompt = (f"SYSTEM: Evaluate the event's outcome: ***{self.chosen_event_plot}*** in light of\n"
+        #           f"Astarion's chosen action: ***{choice}***.\n"
+        #           f"When crafting the outcome, consider the following critical aspects:\n"
+        #           f"1. Logical Consistency: Ensure the action fits within the ASOIAF universe. (For instance, introducing non-existent characters is off-limits.)\n"
+        #           f"2. Character Capability: Assess if Astarion has the knowledge and skills to execute the action. (e.g., Astarion is unaware of Joffrey's illegitimacy unless previously discussed.)\n"
+        #           f"3. Realism: Astarion's actions must be within human capabilities; supernatural feats like flying or teleporting are not permitted.\n"
+        #           f"4. Direct Consequence: The outcome must be a direct consequence of Astarion's action.\n"
+        #           f"5. Creativity in Constraints: If the action is deemed logically impossible, craft a humorous narrative on how Astarion's attempt unfolds and fails.\n"
+        #           f"6. Action Integrity: Do not alter Astarion's original action.\n"
+        #           f"7. Give a clear, definite result of the event\n"
+        #           f"Craft a concise outcome in a paragraph of approximately 50 words:")
         result = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
-        self.summarize_player_action(choice, result)
+        result = result.strip().replace("json", "").replace("```", "")
+        result = json.loads(result)
+        outcome = ""
+        if "outcome" in result:
+            outcome = result["outcome"]
+        if "major_change_of_plot" in result:
+            if result["major_change_of_plot"]:
+                # end the game
+                if result["saved_ned"]:
+                    # end the game
+                    pass
+                pass
+        if "future_outcome" in result:
+            outcome += '\n\n' + result["future_outcome"]
+        # if "saved_ned" in result:
+        #     if result["saved_ned"]:
+        #         # end the game
+        #         pass
+        self.summarize_player_action(choice, outcome)
         self.achievement_evaluator()
         if self.debug:
-            print(f"generated result:\n {result}\n")
-        return choice + '\n' + result
+            print(f"generated result:\n {outcome}\n")
+        return choice + '\n' + outcome
 
     def summarize_player_action(self, choice: str, result: str):
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
