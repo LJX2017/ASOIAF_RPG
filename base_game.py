@@ -3,10 +3,12 @@ from pathlib import Path
 from chat import Chat
 import random
 
-DATA_PATH = "stark2.txt"
+DATA_PATH = "stark3.txt"
 
 with open(DATA_PATH, 'r', encoding="utf-8") as file:
     events = file.readlines()
+with open("important_events.txt", encoding="utf-8") as file:
+    important_events = file.read()
 TOTAL_EVENTS = len(events)
 GAP = 1
 
@@ -28,7 +30,9 @@ class Game:
         self.chosen_event_plot = ""
         self.changes_to_plot = ""
         self.total_events = TOTAL_EVENTS
+        self.win_game = False
         self.end_game = False
+        self.new_achievements = []
         self.achievements = [
             {
                 "id": 1,
@@ -98,10 +102,10 @@ class Game:
                   f"Make minimal changes to the original plot, unless Astarion has made a significant change in the past."
                   f"Detail how this event unfolds without presenting the outcome, emphasizing ser Astarion's role."
                   f"prompt the user(who is acting as Astarion) to make a decision based on the event."
-                  f"You should ask the player ***What is your choice?*** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
+                  f"You should ask the player ***What is your choice? Hint: *** and provide 2 possible choices starting with 1. and 2.(do not reveal the outcome of the choices)"
                   f"Your 50 word paragraph elaborating on the event's unfold:")
         # self
-        return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n' + "Type the choice number or anything you want to do"
+        return self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n' + "Type the choice or anything you want to do"
 
     def action_evaluator(self, user_input: str):
         """
@@ -116,15 +120,15 @@ class Game:
                   f"do not make any explanation"
                   f"Do not change the users action, only output the parsed action."
                   f"briefly output Astarion's (attempted) action:")
-        prompt = (
-            f"SYSTEM: You are presented with a current event scenario: ***{self.chosen_event_plot}***. "
-            f"In response, the user has initiated an action: ***{user_input}***. "
-            "Your task is to interpret the user's action as specific attempts within the scenario. "
-            "For example, if the user says ***I want to kill Cersei***, you should parse and rephrase it as ***Astarion attempts to kill Cersei.*** "
-            "Your response should directly convert the user's action into a character's attempt without adding any explanations or modifications to the original action. "
-            "Simply translate the user's intent into the character’s attempted action, maintaining the original intention as closely as possible. "
-            "Output the character's name followed by their (attempted) action in a concise manner."
-        )
+        # prompt = (
+        #     f"SYSTEM: You are presented with a current event scenario: ***{self.chosen_event_plot}***. "
+        #     f"In response, the user has initiated an action: ***{user_input}***. "
+        #     "Your task is to interpret the user's action as specific attempts within the scenario. "
+        #     "For example, if the user says ***I want to kill Cersei***, you should parse and rephrase it as ***Astarion attempts to kill Cersei.*** "
+        #     "Your response should directly convert the user's action into a character's attempt without adding any explanations or modifications to the original action. "
+        #     "Simply translate the user's intent into the character’s attempted action, maintaining the original intention as closely as possible. "
+        #     "Output the character's name followed by their (attempted) action in a concise manner."
+        #
 
         parsed_input = self.chat.send_message(prompt, keep_in_history=False) + '\n\n\n'
         if self.debug:
@@ -168,12 +172,14 @@ class Game:
                   f"3. realism is key, Astarion cannot do impossible things for humans(e.g. Astarion cannot fly or teleport or change into a monster)\n"
                   f"4. The outcome should be a direct result of Astarion's decision.\n"
                   f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
-                  f"6. Do not change the Astarion's action.\n"
                   f"7. Give a clear, definite result of the event\n"
-                  "only Output in json format{'outcome': str, a 50 word paragraph describing the outcome."
-                  "'major_change_of_plot': bool, whether the outcome deviates from the plot provided.}:"
-                  "'future_outcome': str, empty if no major changes in result. Otherwise, in 100 words explain the fate of the Stark family in this new setting}'"
-                  "'saved_ned': bool, whether Ned Stark is saved in this new plot.}'")
+                  'only Output in json format{"outcome": str, a 50 word paragraph describing the outcome.\n'
+                  f'"future_outcome": str, explain the future fate of house stark, consider how these events **{important_events}** can change based on the outcome of the current event(they are only changed when directly affected, otherwise they remain the same). explain in detail why each of them will change\n'
+                  '"major_change_of_plot": bool, whether the future_events drastically deviates from the original event provided. This is only true when a major character or event is changed and deviates greatly from the original plot or when Ser Astarion is dead/imprisoned.'
+                  '(e.g. Ned Stark decides to stay in Winterfell instead of going to King\'s Landing, leading to a major change in the plot.)\n'
+                  # '"future_outcome": str, empty major_change_of_plot is false. Otherwise, in 100 words explain how the change in this event leades'
+                  # 'to the fate of the Stark family. Detail Ned\'s role is changed in that future. Detail each step of Ned\'s journey in the new plot.'
+                  '"saved_ned": bool, whether Ned Stark is saved from beheading in this new plot.}')
         # prompt = (f"SYSTEM: Evaluate the event's outcome: ***{self.chosen_event_plot}*** in light of\n"
         #           f"Astarion's chosen action: ***{choice}***.\n"
         #           f"When crafting the outcome, consider the following critical aspects:\n"
@@ -187,19 +193,30 @@ class Game:
         #           f"Craft a concise outcome in a paragraph of approximately 50 words:")
         result = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
         result = result.strip().replace("json", "").replace("```", "")
-        result = json.loads(result)
+        print(result)
+        try:
+            result = json.loads(result)
+        except Exception as e:
+            print(result)
+            print(e)
+            return ""
+        if self.debug:
+            print(f"generated result:\n {result}\n")
         outcome = ""
         if "outcome" in result:
             outcome = result["outcome"]
         if "major_change_of_plot" in result:
             if result["major_change_of_plot"]:
                 # end the game
+                if "future_outcome" in result:
+                    outcome += '\n\n' + result["future_outcome"]
                 if result["saved_ned"]:
-                    # end the game
-                    pass
-                pass
-        if "future_outcome" in result:
-            outcome += '\n\n' + result["future_outcome"]
+                    self.win_game = True
+                    outcome += '\n\n' + "Ned Stark is saved"
+                else:
+                    self.win_game = False
+                    outcome += '\n\n' + "Ned Stark is dead"
+                self.end_game = True
         # if "saved_ned" in result:
         #     if result["saved_ned"]:
         #         # end the game
@@ -208,13 +225,39 @@ class Game:
         self.achievement_evaluator()
         if self.debug:
             print(f"generated result:\n {outcome}\n")
-        return choice + '\n' + outcome
+        return choice + '\n' + outcome + '\n\n'
+
+    def generate_new_achievement(self, resp: str):
+        prompt = (f"SYSTEM: Here is the player's action: ***{resp}***"
+                  f"Come up with a new achievement based on the player's action."
+                  f"output in json format"
+                  '{"achievement_name": str(e.g. Diplomat\'s Laurels), "description": str(e.g.Broker a lasting peace between two erstwhile enemies.)}'
+                  'Your new achievement should be based on the player\'s action and should be entertaining.')
+        resp = self.chat.send_message(prompt, keep_in_history=False)
+        resp = resp.replace("json", "").replace("```", "")
+        try:
+            achievements = json.loads(resp)
+            if "achievement_name" in achievements and "description" in achievements:
+                name, description = achievements["achievement_name"], achievements["description"]
+                self.new_achievements.append({"name": name, "description": description})
+        except Exception:
+            pass
+        self.achievements = resp
+        if self.debug:
+            print(f"new_achievements\nresp: {resp}\n\n")
+        # return resp
+
+    def get_new_achievements(self):
+        new_achievements = self.new_achievements[:]
+        self.new_achievements = []
+        return new_achievements
 
     def summarize_player_action(self, choice: str, result: str):
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
                   f"Summarize the whole event above into a single, concise paragraph less than 30 words only including"
                   f" the event, astarion's action, and the result.")
         resp = self.chat.send_message(prompt, keep_in_history=False) + '\n\n'
+        self.generate_new_achievement(resp)
         self.chat.add_to_message_history(resp, False)
         self.chat.add_to_message_history("I will remember this change to plot", True)
 
@@ -273,6 +316,8 @@ class Game:
         if self.debug:
             print("CHAT HISTORY: ", self.chat.chat_history)
         if self.current_event_id >= TOTAL_EVENTS:
+            return result_of_event
+        if self.end_game:
             return result_of_event
         chosen_event_id = self.pick_event_id(self.current_event_id, end)
         full_summery = self.part_by_part_summery(self.current_event_id, chosen_event_id - 1)

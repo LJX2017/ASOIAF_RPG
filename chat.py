@@ -46,7 +46,7 @@ RULES = ChatPromptTemplate.from_messages(
 # key = os.getenv('OPENAI_API_KEY')
 # print(key)
 
-llm = ChatOpenAI(openai_api_key="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", model_name="gpt-3.5-turbo", temperature=0)
+llm = ChatOpenAI(openai_api_key="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", model_name="gpt-3.5-turbo", temperature=0)
 
 def generate_content(user_message: str):
     return llm.invoke(user_message).content

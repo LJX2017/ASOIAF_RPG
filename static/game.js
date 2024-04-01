@@ -129,9 +129,18 @@ const setUpFormSubmission = () => {
             populateAchievements(achievementsData.achievements);
             populateIconsAndButton(achievementsData.achievements);
             setupAchievementsModal()
+            fetchNewAchievements(sessionId);
+            const end_gameResponse = await fetch(`/api/end_game?session_id=${sessionId}`);
+            const end_gameData = await end_gameResponse.json();
+            if (end_gameData.end_game) {
+                document.getElementById('userInput').disabled = true;
+                submitButton.textContent = "Game Over";
+                submitButton.disabled = true;
+            }
         } catch (error) {
             console.error('Error during fetch operation:', error);
         } finally {
+            document.getElementById('userInput').value = '';
             submitButton.disabled = false;
         }
     });
@@ -210,12 +219,46 @@ function fetchAndUpdateProgressBar() {
         .then(data => {
             const currentProgress = data.progress[0];
             const totalEvents = data.progress[1];
-            const percentage = (currentProgress / totalEvents) * 100;
+            const percentage = ((currentProgress / totalEvents) * 100).toFixed(2);
 
             document.getElementById("progressBar").style.width = percentage + '%';
-            document.getElementById("progressText").innerText = `${currentProgress}/${totalEvents}`;
+            document.getElementById("progressText").innerText = `percentage: ${percentage}%`;
         })
         .catch(error => {
             console.error('There has been a problem with your fetch operation:', error);
         });
+}
+
+const showAchievementPopup = (achievement) => {
+  const container = document.getElementById('achievementPopupContainer');
+  const popup = document.createElement('div');
+  popup.className = 'achievement-popup';
+  popup.innerHTML = `
+    <h4>New Achievement Unlocked!</h4>
+    <strong>${achievement.name}</strong>
+    <p>${achievement.description}</p>
+  `;
+
+  container.appendChild(popup);
+
+  // Automatically remove the popup after a delay (e.g., 5 seconds)
+  setTimeout(() => {
+    popup.style.opacity = '0';
+    setTimeout(() => popup.remove(), 500); // Wait for fade out to remove
+  }, 5000);
+};
+
+async function fetchNewAchievements(sessionId) {
+    const response = await fetch(`/api/new_achievements?session_id=${sessionId}`);
+    if (response.ok) {
+        const data = await response.json();
+        const newAchievements = data.new_achievements;
+        // Process new achievements, e.g., display them to the user
+        newAchievements.forEach(achievement => {
+            // Assuming showAchievementPopup is a function you have to display achievements
+            showAchievementPopup(achievement);
+        });
+    } else {
+        console.error('Failed to fetch new achievements');
+    }
 }

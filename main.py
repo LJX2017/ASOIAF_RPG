@@ -2,9 +2,11 @@ from fastapi import FastAPI, HTTPException, Request, Query
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel
-from dynamic_game import Game
+from base_game import Game
 from uuid import UUID, uuid4
 import json
+import uvicorn
+
 
 app = FastAPI()
 
@@ -62,6 +64,7 @@ async def submit_input(user_input: UserInput):
     session_id = user_input.sessionId
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
+    print("URGENT: REACHED SUBMIT INPUT", user_input.userInput, user_input.sessionId)
     response_text = games[session_id].next_loop(user_input.userInput)  # Placeholder method, implement accordingly
     # print(session_id, games[session_id].chosen_event_plot)
     return {"finalText": response_text}
@@ -88,3 +91,33 @@ async def current_progress(session_id: UUID = Query(...)):
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
     return {"progress": [games[session_id].current_event_id, 26]}
+
+
+@app.get("/api/end_game")
+async def end_game(session_id: UUID = Query(...)):
+    """
+    Endpoint to end game for a given session.
+    """
+    if session_id not in games:
+        raise HTTPException(status_code=404, detail="Session not found")
+    # del games[session_id]
+    return {"end_game": games[session_id].end_game, "win": games[session_id].win_game}
+
+@app.get("/api/new_achievements")
+async def new_achievements(session_id: UUID = Query(...)):
+    """
+    Endpoint to fetch new achievements for a given session.
+    """
+    if session_id not in games:
+        raise HTTPException(status_code=404, detail="Session not found")
+
+    new_achievements = games[session_id].get_new_achievements()
+    return {"new_achievements": new_achievements}
+
+
+def main():
+    uvicorn.run("main:app", host="127.0.0.1", port=8000, log_level="info", reload=True)
+
+
+if __name__ == "__main__":
+    main()
