@@ -173,8 +173,9 @@ class Game:
                   f"4. The outcome should be a direct result of Astarion's decision.\n"
                   f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
                   f"7. Give a clear, definite result of the event\n"
-                  'only Output in json format{"outcome": str, a 50 word paragraph describing the outcome.\n'
-                  f'"future_outcome": str, explain the future fate of house stark, consider how these events **{important_events}** can change based on the outcome of the current event(they are only changed when directly affected, otherwise they remain the same). explain in detail why each of them will change\n'
+                  'only Output in json format{"outcome": str, a 50 word paragraph describing the outcome of the current event.\n'
+                  ''
+                  f'"future_outcome": str, what is the logical outcome of Eddard Stark based on the outcome of the current event. You have to take these major plot points(they are only changed when directly affected, otherwise they remain the same) into considerthese events **{important_events}**. Think Step by Step and explain in detail why each of them will stay the same or change\n'
                   '"major_change_of_plot": bool, whether the future_events drastically deviates from the original event provided. This is only true when a major character or event is changed and deviates greatly from the original plot or when Ser Astarion is dead/imprisoned.'
                   '(e.g. Ned Stark decides to stay in Winterfell instead of going to King\'s Landing, leading to a major change in the plot.)\n'
                   # '"future_outcome": str, empty major_change_of_plot is false. Otherwise, in 100 words explain how the change in this event leades'
