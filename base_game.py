@@ -248,7 +248,7 @@ class Game:
             print(f"new_achievements\nresp: {resp}\n\n")
         # return resp
 
-    def get_new_achievements(self):
+    def  get_new_achievements(self):
         new_achievements = self.new_achievements[:]
         self.new_achievements = []
         return new_achievements
