@@ -7,7 +7,6 @@ from uuid import UUID, uuid4
 import json
 import uvicorn
 
-
 app = FastAPI()
 
 # Setup CORS for development ease
@@ -101,7 +100,8 @@ async def end_game(session_id: UUID = Query(...)):
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
     # del games[session_id]
-    return {"end_game": games[session_id].end_game, "win": games[session_id].win_game}
+    return {"end_game": games[session_id].end_game}
+
 
 @app.get("/api/new_achievements")
 async def new_achievements(session_id: UUID = Query(...)):
@@ -110,9 +110,9 @@ async def new_achievements(session_id: UUID = Query(...)):
     """
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
-
-    new_achievements = games[session_id].get_new_achievements()
-    return {"new_achievements": new_achievements}
+    new_achievement = games[session_id].get_new_achievement()
+    print("MAIN.PY: Generating new achievements!!!!!!!!!!!!", new_achievement)
+    return {"new_achievements": new_achievement}
 
 
 def main():

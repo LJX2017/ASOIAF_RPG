@@ -72,7 +72,7 @@ class Chat:
     def _generate_log_file_name(self):
         # Generate a unique log file name using instance id and timestamp
         timestamp = datetime.datetime.now().strftime("%Y_%m_%d_%H%M")
-        return f"{self.log_dir}/chatbot_log_{id(self)}_{timestamp}.txt"
+        return f"{self.log_dir}/chatbot_log_{timestamp}_{id(self)}.txt"
 
     def log_message(self, message: str):
         # Log both user and AI messages

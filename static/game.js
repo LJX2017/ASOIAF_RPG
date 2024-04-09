@@ -252,12 +252,8 @@ async function fetchNewAchievements(sessionId) {
     const response = await fetch(`/api/new_achievements?session_id=${sessionId}`);
     if (response.ok) {
         const data = await response.json();
-        const newAchievements = data.new_achievements;
-        // Process new achievements, e.g., display them to the user
-        newAchievements.forEach(achievement => {
-            // Assuming showAchievementPopup is a function you have to display achievements
-            showAchievementPopup(achievement);
-        });
+        const newAchievement = data.new_achievements;
+        showAchievementPopup(newAchievement);
     } else {
         console.error('Failed to fetch new achievements');
     }

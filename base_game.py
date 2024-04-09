@@ -148,7 +148,7 @@ class Game:
             if "achievements" in achievements:
                 resp = json.dumps(achievements["achievements"])
         except Exception:
-            pass
+            return
         self.achievements = resp
         if self.debug:
             print(f"achievement_evaluator\nresp: {resp}\n\n")
@@ -166,16 +166,16 @@ class Game:
         choice = self.action_evaluator(user_input)
         prompt = (f"SYSTEM: Consider the outcome of the event: ***{self.chosen_event_plot}*** regarding\n"
                   f"Astarion's action: ***{choice}***\n"
-                  f"Consider these questions when developing the outcome:\n"
-                  f"1. Is the decision logically possible in the context of ASOIAF?(e.g. the user can't introduce someone who does not exist in ASOIAF world)\n"
-                  f"2. Is Astarion capable of making such actions?(e.g. Astarion does not know Joffery's bastardy unless mentioned in previous conversation)\n"
-                  f"3. realism is key, Astarion cannot do impossible things for humans(e.g. Astarion cannot fly or teleport or change into a monster)\n"
-                  f"4. The outcome should be a direct result of Astarion's decision.\n"
-                  f"5. If you deem the action logically impossible, be creative and present a humorous result(how he attempted to but failed)\n"
-                  f"7. Give a clear, definite result of the event\n"
+                  f"Remember these points when developing the outcome:\n***"
+                  f"Is the decision logically possible in the context of ASOIAF?(e.g. the user can't introduce someone who does not exist in ASOIAF world)\n"
+                  f"Realism is key,h Astarion cannot do impossible tings for humans(e.g. Astarion cannot fly or teleport or change into a monster)\n"
+                  f"The outcome should be a direct result of Astarion's decision.\n"
+                  f"The action should succeed as long as it is logical, if you deem it success full, detail how Astarion successfully executes the action and the outcome.\n"
+                  f"If you deem the action completely impossible, be creative and present a humorous result(how he attempted to but failed)\n"
+                  f"Give a clear, definite result of the event***\n"
                   'only Output in json format{"outcome": str, a 50 word paragraph describing the outcome of the current event.\n'
                   ''
-                  f'"future_outcome": str, what is the logical outcome of Eddard Stark based on the outcome of the current event. You have to take these major plot points(they are only changed when directly affected, otherwise they remain the same) into considerthese events **{important_events}**. Think Step by Step and explain in detail why each of them will stay the same or change\n'
+                  f'"future_outcome": str, what is the logical outcome of Eddard Stark based on the outcome of the current event. You have to take these major plot points(they are only changed when directly affected, otherwise they remain the same) into consider these events **{important_events}**. Think Step by Step and explain in detail why each of them will stay the same or change\n'
                   '"major_change_of_plot": bool, whether the future_events drastically deviates from the original event provided. This is only true when a major character or event is changed and deviates greatly from the original plot or when Ser Astarion is dead/imprisoned.'
                   '(e.g. Ned Stark decides to stay in Winterfell instead of going to King\'s Landing, leading to a major change in the plot.)\n'
                   # '"future_outcome": str, empty major_change_of_plot is false. Otherwise, in 100 words explain how the change in this event leades'
@@ -206,27 +206,40 @@ class Game:
         outcome = ""
         if "outcome" in result:
             outcome = result["outcome"]
+        self.summarize_player_action(choice, outcome)
         if "major_change_of_plot" in result:
             if result["major_change_of_plot"]:
+                outcome += '\n\n' + self.game_ending()
                 # end the game
-                if "future_outcome" in result:
-                    outcome += '\n\n' + result["future_outcome"]
-                if result["saved_ned"]:
-                    self.win_game = True
-                    outcome += '\n\n' + "Ned Stark is saved"
-                else:
-                    self.win_game = False
-                    outcome += '\n\n' + "Ned Stark is dead"
+                # if "future_outcome" in result:
+                #     outcome += '\n\n' + result["future_outcome"]
+                # if result["saved_ned"]:
+                #     self.win_game = True
+                #     outcome += '\n\n' + "Ned Stark is saved"
+                # else:
+                #     self.win_game = False
+                #     outcome += '\n\n' + "Ned Stark is dead"
                 self.end_game = True
         # if "saved_ned" in result:
         #     if result["saved_ned"]:
         #         # end the game
         #         pass
-        self.summarize_player_action(choice, outcome)
         self.achievement_evaluator()
         if self.debug:
             print(f"generated result:\n {outcome}\n")
         return choice + '\n' + outcome + '\n\n'
+
+    def game_ending(self) -> str:
+        prompt = (f"SYSTEM: based on the actions and results of the player of Astarion, the game has ended."
+                  f"detail the fate of the Eddard Stark, as well as other Stark members."
+                  f"Step by step, give a logical ending to the game based on the player's actions and highlight Ned "
+                  f"Stark's outcome(killed or not)."
+                  f"make sure to cover the major events listed ***{important_events}**. Detail how each event is "
+                  f"changed or remains the same."
+                  f"Your ending in 200 words:")
+        resp = self.chat.send_message(prompt, keep_in_history=False)
+        self.end_game = True
+        return resp
 
     def generate_new_achievement(self, resp: str):
         prompt = (f"SYSTEM: Here is the player's action: ***{resp}***"
@@ -243,15 +256,15 @@ class Game:
                 self.new_achievements.append({"name": name, "description": description})
         except Exception:
             pass
-        self.achievements = resp
+        # self.achievements = resp
         if self.debug:
             print(f"new_achievements\nresp: {resp}\n\n")
         # return resp
 
-    def  get_new_achievements(self):
-        new_achievements = self.new_achievements[:]
+    def get_new_achievement(self):
+        new_achievement = self.new_achievements[-1]
         self.new_achievements = []
-        return new_achievements
+        return new_achievement
 
     def summarize_player_action(self, choice: str, result: str):
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
