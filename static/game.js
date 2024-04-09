@@ -249,6 +249,11 @@ const showAchievementPopup = (achievement) => {
 };
 
 async function fetchNewAchievements(sessionId) {
+    if (Math.random() >= 0.25) {
+        // If the random number is not below 0.25, end the function early
+        console.log('Skipping fetchNewAchievements due to probability check.');
+        return;
+    }
     const response = await fetch(`/api/new_achievements?session_id=${sessionId}`);
     if (response.ok) {
         const data = await response.json();
