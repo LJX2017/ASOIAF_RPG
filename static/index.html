@@ -7,6 +7,9 @@
     <link rel="stylesheet" href="game.css"> <!-- Link to your CSS file -->
     <title>A Song of Ice and Fire</title>
 </head>
+
+
+
 <body>
 <!--    <button id="achievementsButton">Achievements</button>-->
 
@@ -23,6 +26,19 @@
 <div id="iconsAndAchievementContainer" style="text-align:center; margin-bottom: 20px;">
     <button id="achievementsButton" class="achievement-button" type="button">Achievements</button>
 </div>
+
+<!-- Background Music -->
+<audio id="bgMusic" loop autoplay>
+    <source src="GoT.mp3" type="audio/mpeg">
+    Your browser does not support the audio tag.
+</audio>
+
+<!-- Mute Button -->
+<!--<button onclick="toggleMute()" class="mute-button">Mute/Unmute Music</button>-->
+<div id="mute button" style="text-align:center; margin-bottom: 20px;">
+    <button onclick="toggleMute()" style="text-align:center; font-size: 15px; display: inline-block; cursor: pointer; border-radius: 8px; width: 200px; height: 50px;">Mute/Unmute</button>
+</div>
+
 <div id="achievementsModal" class="modal">
     <div class="modal-content">
         <span class="close">&times;</span>

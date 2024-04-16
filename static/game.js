@@ -86,6 +86,8 @@ const handleGameStart = event => {
     document.getElementById('userInput').disabled = false;
     document.querySelector('button[type="submit"]').textContent = "Submit";
     document.getElementById('cliOutput').textContent = "";
+    const bgMusic = document.getElementById('bgMusic');
+    bgMusic.play()
     fetchInitialText();
     setUpFormSubmission();
 };
@@ -161,6 +163,18 @@ const setupAchievementsModal = () => {
 
 // Main
 document.addEventListener("DOMContentLoaded", () => {
+    const bgMusic = document.getElementById('bgMusic');
+
+    // Attempt to play music when the document is fully loaded
+    const playPromise = bgMusic.play();
+    if (playPromise !== undefined) {
+        playPromise.then(_ => {
+            console.log("Autoplay started successfully.");
+        }).catch(error => {
+            console.log("Autoplay was prevented:", error);
+            // Here you might add a user interface indication that autoplay failed
+        });
+    }
     initializeIntroduction();
     populateIconsAndButton(achievements);
     setupAchievementsModal();
@@ -263,3 +277,33 @@ async function fetchNewAchievements(sessionId) {
         console.error('Failed to fetch new achievements');
     }
 }
+
+
+function toggleMute() {
+    const music = document.getElementById('bgMusic');
+    music.muted = !music.muted;
+    console.log("Mute toggled. Current state: " + (music.muted ? "Muted" : "Unmuted"));
+    if (!music.muted) {
+        music.play().catch(error => {
+            console.log("Failed to play after unmuting:", error);
+        });
+    }
+}
+
+// You can expose toggleMute if it needs to be globally accessible
+window.toggleMute = toggleMute;
+
+// Log when the audio starts playing
+document.getElementById("bgMusic").oncanplaythrough = function() {
+    console.log("Audio is loaded and can play through.");
+};
+
+document.getElementById("bgMusic").onplay = function() {
+    console.log("Audio is now playing.");
+};
+
+// Check if the music plays automatically or is blocked by browser policies
+document.getElementById("bgMusic").autoplay = true;
+document.getElementById("bgMusic").play().catch(error => {
+    console.log("Audio failed to play automatically. Error: " + error.message);
+});

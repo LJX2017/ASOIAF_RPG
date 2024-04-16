@@ -135,23 +135,23 @@ class Game:
             print(f"parsing the input from the user: {user_input}\n result: {parsed_input}\n")
         return parsed_input
 
-    def achievement_evaluator(self):
-        prompt = (f"SYSTEM: Here are the achievements available:***\n{self.achievements}***"
-                  f"change the achievement's accomplished status to true if the user has achieved it."
-                  f"Unless there is direct evidence in our message history"
-                  f"do not change the status of the achievements from False to True."
+    def achievement_evaluator(self, outcome):
+        prompt = (f"SYSTEM: Please evaluate achievements for a game.\n"
+                  f"Change the achievement's accomplished status to true if the user has achieved it.\n"
+                  f"Only consider the users action in this event when evaluating ***{self.chosen_event_plot}*** and the outcome of the event ***{outcome}***.\n"
+                  f"Here are the achievements :***{self.achievements}***\n"
                   f"Output the updated achievements(match the format provided to you) in json format:")
-        resp = self.chat.send_message(prompt, keep_in_history=False)
+        resp = self.chat.generate_content(prompt)
         resp = resp.replace("json", "").replace("```", "")
         try:
+            if self.debug:
+                print(f"achievement_evaluator\nresp: {resp}\n\n")
             achievements = json.loads(resp)
             if "achievements" in achievements:
                 resp = json.dumps(achievements["achievements"])
         except Exception:
             return
         self.achievements = resp
-        if self.debug:
-            print(f"achievement_evaluator\nresp: {resp}\n\n")
         # return resp
 
     def get_achievements(self):
@@ -224,18 +224,20 @@ class Game:
         #     if result["saved_ned"]:
         #         # end the game
         #         pass
-        self.achievement_evaluator()
+        self.achievement_evaluator(outcome)
         if self.debug:
             print(f"generated result:\n {outcome}\n")
         return choice + '\n' + outcome + '\n\n'
 
     def game_ending(self) -> str:
         prompt = (f"SYSTEM: based on the actions and results of the player of Astarion, the game has ended."
+                  f"Now you have to generate the ending of the game."
                   f"detail the fate of the Eddard Stark, as well as other Stark members."
                   f"Step by step, give a logical ending to the game based on the player's actions and highlight Ned "
-                  f"Stark's outcome(killed or not)."
+                  f"'s outcome(killed or not)."
                   f"make sure to cover the major events listed ***{important_events}**. Detail how each event is "
                   f"changed or remains the same."
+                  f"In the end, Indicate whether the player has won or lost the game depending on Ned's survival or not."
                   f"Your ending in 200 words:")
         resp = self.chat.send_message(prompt, keep_in_history=False)
         self.end_game = True
