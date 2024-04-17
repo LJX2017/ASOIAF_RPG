@@ -138,6 +138,10 @@ const setUpFormSubmission = () => {
                 document.getElementById('userInput').disabled = true;
                 submitButton.textContent = "Game Over";
                 submitButton.disabled = true;
+                // end_gameData.win_game
+                console.log("Game Over")
+                console.log("Won Game?" + end_gameData.win_game)
+                showAchievementPopup({"name": "", "description": end_gameData.win_game ? "You have won the game!" : "You have lost the game!"});
             }
         } catch (error) {
             console.error('Error during fetch operation:', error);
@@ -244,6 +248,10 @@ function fetchAndUpdateProgressBar() {
 }
 
 const showAchievementPopup = (achievement) => {
+    if (achievement.name === "empty_achievement") {
+        console.log('Skipping fetchNewAchievements due to probability check.');
+        return;
+    }
   const container = document.getElementById('achievementPopupContainer');
   const popup = document.createElement('div');
   popup.className = 'achievement-popup';
@@ -263,11 +271,6 @@ const showAchievementPopup = (achievement) => {
 };
 
 async function fetchNewAchievements(sessionId) {
-    if (Math.random() >= 0.25) {
-        // If the random number is not below 0.25, end the function early
-        console.log('Skipping fetchNewAchievements due to probability check.');
-        return;
-    }
     const response = await fetch(`/api/new_achievements?session_id=${sessionId}`);
     if (response.ok) {
         const data = await response.json();

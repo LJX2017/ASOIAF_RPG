@@ -32,7 +32,8 @@ class Game:
         self.total_events = TOTAL_EVENTS
         self.win_game = False
         self.end_game = False
-        self.new_achievements = []
+        self.new_achievement = None
+        self.conversation_history = []
         self.achievements = [
             {
                 "id": 1,
@@ -220,11 +221,8 @@ class Game:
                 #     self.win_game = False
                 #     outcome += '\n\n' + "Ned Stark is dead"
                 self.end_game = True
-        # if "saved_ned" in result:
-        #     if result["saved_ned"]:
-        #         # end the game
-        #         pass
         self.achievement_evaluator(outcome)
+
         if self.debug:
             print(f"generated result:\n {outcome}\n")
         return choice + '\n' + outcome + '\n\n'
@@ -241,9 +239,15 @@ class Game:
                   f"Your ending in 200 words:")
         resp = self.chat.send_message(prompt, keep_in_history=False)
         self.end_game = True
+        prompt = (f"based on this ***{resp}***, indicate whether the player has won or lost the game."
+                  f"Only output True or False")
+        self.win_game = self.chat.send_message(prompt, keep_in_history=False) == "True"
         return resp
 
     def generate_new_achievement(self, resp: str):
+        if random.random() > 0.25:
+            self.new_achievement = {"name": "empty_achievement", "description": ""}
+            return None
         prompt = (f"SYSTEM: Here is the player's action: ***{resp}***"
                   f"Come up with a new achievement based on the player's action."
                   f"output in json format"
@@ -255,20 +259,20 @@ class Game:
             achievements = json.loads(resp)
             if "achievement_name" in achievements and "description" in achievements:
                 name, description = achievements["achievement_name"], achievements["description"]
-                self.new_achievements.append({"name": name, "description": description})
+                self.new_achievement = {"name": name, "description": description}
         except Exception:
             pass
         # self.achievements = resp
         if self.debug:
-            print(f"new_achievements\nresp: {resp}\n\n")
+            print(f"new_achievement\nresp: {resp}\n\n")
         # return resp
 
     def get_new_achievement(self):
-        new_achievement = self.new_achievements[-1]
-        self.new_achievements = []
+        new_achievement = self.new_achievement
+        self.new_achievement = None
         return new_achievement
 
-    def summarize_player_action(self, choice: str, result: str):
+    def summarize_player_action(self, choice: str, result: str) -> None:
         prompt = (f"SYSTEM: Event : *{self.chosen_event_plot}*\nser Astarion's action: *{choice}*\n final result: *{result}\n"
                   f"Summarize the whole event above into a single, concise paragraph less than 30 words only including"
                   f" the event, astarion's action, and the result.")
@@ -276,6 +280,9 @@ class Game:
         self.generate_new_achievement(resp)
         self.chat.add_to_message_history(resp, False)
         self.chat.add_to_message_history("I will remember this change to plot", True)
+        self.conversation_history.append(resp)
+        if self.new_achievement["name"] != "empty_achievement":
+            self.conversation_history[-1] += "\n\nAchievement unlocked: " + self.new_achievement["name"] + "\n"
 
     def pick_event_id(self, beg: int, end: int):
         return beg
@@ -342,9 +349,9 @@ class Game:
         return result_of_event + full_summery + self.chosen_event_plot
 
     def get_conversation_history(self) -> list[str]:
-        if self.debug:
-            print("request chat history: ", [i.content for i in self.chat.chat_history.messages if i.content != "I will remember this change to plot"])
-        return [i.content for i in self.chat.chat_history.messages if i.content != "I will remember this change to plot"]
+        # if self.debug:
+        #     print("request chat history: ", [i.content for i in self.chat.chat_history.messages if i.content != "I will remember this change to plot"])
+        return self.conversation_history
 
 
 if __name__ == "__main__":

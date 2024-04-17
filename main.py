@@ -100,7 +100,7 @@ async def end_game(session_id: UUID = Query(...)):
     if session_id not in games:
         raise HTTPException(status_code=404, detail="Session not found")
     # del games[session_id]
-    return {"end_game": games[session_id].end_game}
+    return {"end_game": games[session_id].end_game, "win_game": games[session_id].win_game}
 
 
 @app.get("/api/new_achievements")
